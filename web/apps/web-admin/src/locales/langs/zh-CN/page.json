@@ -1,0 +1,74 @@
+{
+  "auth": {
+    "login": "登录",
+    "register": "注册",
+    "codeLogin": "验证码登录",
+    "qrcodeLogin": "二维码登录",
+    "forgetPassword": "忘记密码",
+    "profile": "个人中心"
+  },
+  "dashboard": {
+    "title": "概览",
+    "analytics": "分析页",
+    "workspace": "工作台"
+  },
+  "system": {
+    "user": {
+      "title": "用户管理",
+      "username": "用户名",
+      "nickname": "昵称",
+      "password": "密码",
+      "status": "状态",
+      "roles": "角色",
+      "createdAt": "创建时间"
+    },
+    "role": {
+      "title": "角色管理",
+      "name": "角色名",
+      "code": "角色编码",
+      "dataScope": "数据范围",
+      "description": "描述",
+      "status": "状态",
+      "createdAt": "创建时间"
+    },
+    "menu": {
+      "title": "菜单管理",
+      "name": "菜单名",
+      "icon": "图标",
+      "path": "路径",
+      "component": "组件",
+      "sort": "排序",
+      "visible": "显示",
+      "status": "状态"
+    },
+    "api": {
+      "title": "API管理"
+    },
+    "dict": {
+      "title": "字典管理",
+      "name": "字典名称",
+      "code": "字典码",
+      "status": "状态"
+    },
+    "dictDetail": {
+      "title": "字典详情"
+    },
+    "param": {
+      "title": "系统参数"
+    }
+  },
+  "logs": {
+    "operation": {
+      "title": "操作日志"
+    },
+    "login": {
+      "title": "登录日志"
+    },
+    "error": {
+      "title": "错误日志"
+    }
+  },
+  "files": {
+    "title": "文件管理"
+  }
+}

@@ -1,0 +1,26 @@
+.ant-table-wrapper {
+  max-width: 100%;
+}
+
+.ant-table-wrapper .ant-table {
+  overflow-x: auto;
+}
+
+.ant-table-wrapper .ant-table-content,
+.ant-table-wrapper .ant-table-container {
+  overflow-x: auto;
+}
+
+.ant-table-wrapper .ant-table table {
+  width: max-content;
+  min-width: 100%;
+}
+
+.ant-table-wrapper .ant-table-thead > tr > th,
+.ant-table-wrapper .ant-table-tbody > tr > td {
+  white-space: nowrap;
+}
+
+.ant-table-wrapper .ant-table-cell .ant-space {
+  flex-wrap: nowrap;
+}

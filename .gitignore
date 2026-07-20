@@ -1,0 +1,24 @@
+# Local backend configuration
+/backend/.env
+
+# Go build output
+/backend/bin/
+/backend/tmp/
+/backend/*.exe
+/backend/*.test
+/backend/*.out
+
+# Frontend dependencies and generated output
+/web/node_modules/
+/web/.turbo/
+/web/apps/*/node_modules/
+/web/apps/*/dist/
+/web/apps/*/dist.zip
+/web/apps/*/.turbo/
+
+# Editors and operating systems
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+*.log

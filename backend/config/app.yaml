@@ -1,0 +1,98 @@
+# Standalone permission-management service configuration.
+app:
+  name: admin-platform
+  env: dev
+  debug: true
+  address: :8080
+
+server:
+  http:
+    addr: :8080
+    mode: contract
+
+database:
+  driver: mysql
+  dsn: env(DATABASE_DSN)
+
+log:
+  level: debug
+  format: console
+
+tracing:
+  enabled: false
+  backend: otel
+  service_name: admin-platform
+  otel:
+    endpoint: localhost:4317
+  sampling_rate: 1.0
+
+metadata:
+  enabled: false
+  backend: default
+  propagate_prefix:
+    - x-md-
+
+governance:
+  disable: []
+  providers: {}
+
+service_auth:
+  enabled: false
+  backend: token
+  token:
+    secret: env(SERVICE_AUTH_SECRET)
+    issuer: admin-platform
+    audience: ""
+    expiry: 3600
+  allowed_services: []
+
+circuit_breaker:
+  enabled: false
+  backend: sentinel
+
+load_shedding:
+  enabled: false
+  backend: semaphore
+
+selector:
+  enabled: false
+  backend: random
+
+discovery:
+  enabled: false
+  backend: noop
+
+auth:
+  jwt:
+    secret: env(JWT_SECRET)
+    issuer: admin-platform
+    audience: ""
+
+casbin:
+  model_path: config/casbin_model.conf
+
+redis:
+  addr: 127.0.0.1:6379
+  password: ""
+  db: 0
+
+message_queue:
+  enabled: false
+  backend: redis
+  redis:
+    addr: 127.0.0.1:6379
+    password: ""
+    db: 0
+  max_retry: 3
+
+distributed_lock:
+  enabled: false
+  backend: redis
+  redis:
+    addr: 127.0.0.1:6379
+    password: ""
+    db: 0
+  key_prefix: "lock:"
+
+cache:
+  driver: memory
