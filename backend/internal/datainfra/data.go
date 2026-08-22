@@ -5,13 +5,33 @@ package datainfra
 
 import (
 	"context"
+	"os"
 
 	"github.com/casbin/casbin/v2"
+	"github.com/casbin/casbin/v2/model"
 	gormadapter "github.com/casbin/gorm-adapter/v3"
 	"github.com/ngq/admin-platform/internal/data/po"
 	datacontract "github.com/ngq/gorp/framework/contract/data"
 	"gorm.io/gorm"
 )
+
+// defaultCasbinRBACModel 内置默认 RBAC 模型定义，当外部配置文件不存在时作为高可用兜底。
+const defaultCasbinRBACModel = `
+[request_definition]
+r = sub, obj, act
+
+[policy_definition]
+p = sub, obj, act
+
+[role_definition]
+g = _, _
+
+[policy_effect]
+e = some(where (p.eft == allow))
+
+[matchers]
+m = g(r.sub, p.sub) && r.obj == p.obj && r.act == p.act
+`
 
 // gormDBWrapper 适配 *gorm.DB 到框架 datacontract.GormDB 契约
 // gorm.DB.WithContext 返回 *gorm.DB，而契约要求返回 any，需桥接
@@ -36,23 +56,30 @@ type Data struct {
 
 // NewData 创建数据层实例
 // 接收框架提供的 *gorm.DB，包装为框架 GormDB 契约
-// 初始化 GORM 适配器并创建 Casbin 同步执行器
-func NewData(db *gorm.DB) *Data {
+// 初始化 GORM 适配器并创建 Casbin 同步执行器（支持指定 modelPath 或内置字符串兜底）
+func NewData(db *gorm.DB, modelPath ...string) *Data {
 	// 使用 NewAdapterByDBWithCustomTable 传入自定义 CasbinRulePO 结构体
-	// 根因：gorm-adapter 默认的 CasbinRule 使用 gorm:"size:100"（varchar(100)），
-	// 但如果 migrate 中 AutoMigrate 了列宽更大的 PO（如 varchar(128)），
-	// GORM 会检测到列宽差异并执行 ALTER TABLE MODIFY COLUMN，
-	// 在 MySQL utf8mb4 字符集下 varchar(128) * 4 = 512 > 3072/7（组合索引限制），导致索引长度报错。
-	// 解决方案：统一由 gorm-adapter 通过自定义结构体管理 casbin_rule 表，
-	// 不在 migrate 中 AutoMigrate 此表，避免列宽冲突。
 	adapter, err := gormadapter.NewAdapterByDBWithCustomTable(db, &po.CasbinRulePO{})
 	if err != nil {
 		panic("failed to create casbin adapter: " + err.Error())
 	}
 
-	// 创建 Casbin 同步执行器，使用 RBAC 模型配置文件
-	// SyncedEnforcer 内部加锁，适合并发 HTTP 场景
-	enforcer, err := casbin.NewSyncedEnforcer("config/casbin_model.conf", adapter)
+	// 优先检查外部配置文件，若文件不存在则无缝降级为内置模型字符串（避免相对路径依赖导致的 panic）
+	var enforcer *casbin.SyncedEnforcer
+	customPath := "config/casbin_model.conf"
+	if len(modelPath) > 0 && modelPath[0] != "" {
+		customPath = modelPath[0]
+	}
+
+	if _, statErr := os.Stat(customPath); statErr == nil {
+		enforcer, err = casbin.NewSyncedEnforcer(customPath, adapter)
+	} else {
+		m, modelErr := model.NewModelFromString(defaultCasbinRBACModel)
+		if modelErr != nil {
+			panic("failed to parse default casbin model: " + modelErr.Error())
+		}
+		enforcer, err = casbin.NewSyncedEnforcer(m, adapter)
+	}
 	if err != nil {
 		panic("failed to create casbin synced enforcer: " + err.Error())
 	}
@@ -61,8 +88,6 @@ func NewData(db *gorm.DB) *Data {
 	_ = enforcer.LoadPolicy()
 
 	return &Data{
-		// 将 *gorm.DB 包装为 datacontract.GormDB 接口
-		// 确保所有 DB 访问都经过 WithContext，强制 context 传递
 		db:     &gormDBWrapper{db: db},
 		rawDB:  db,
 		Casbin: enforcer,

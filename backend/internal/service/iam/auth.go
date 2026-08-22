@@ -19,27 +19,33 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-// captchaStore 验证码存储（内存实现）
-// 生产环境可替换为 Redis 实现
-var captchaStore = base64Captcha.DefaultMemStore
-
-// captchaMaker 验证码生成器
-// 使用默认配置：字符验证码，宽 120，高 40
-var captchaMaker = base64Captcha.NewCaptcha(base64Captcha.DefaultDriverDigit, captchaStore)
-
 // AuthService 认证服务
 // 协调 JWT 服务、认证仓库、用户仓库完成认证流程
 type AuthService struct {
-	iamBiz    *bizIam.Biz
-	authBiz   *bizAuth.Biz
-	auditBiz  *bizAudit.Biz
-	systemBiz *bizSystem.Biz
-	jwtSvc    securitycontract.JWTService
+	iamBiz       *bizIam.Biz
+	authBiz      *bizAuth.Biz
+	auditBiz     *bizAudit.Biz
+	systemBiz    *bizSystem.Biz
+	jwtSvc       securitycontract.JWTService
+	captchaStore base64Captcha.Store
+	captchaMaker *base64Captcha.Captcha
 }
 
-// NewAuthService 创建认证服务
-func NewAuthService(iamBiz *bizIam.Biz, authBiz *bizAuth.Biz, auditBiz *bizAudit.Biz, systemBiz *bizSystem.Biz, jwtSvc securitycontract.JWTService) *AuthService {
-	return &AuthService{iamBiz: iamBiz, authBiz: authBiz, auditBiz: auditBiz, systemBiz: systemBiz, jwtSvc: jwtSvc}
+// NewAuthService 创建认证服务（支持注入 Redis 验证码存储或降级为默认内存存储）
+func NewAuthService(iamBiz *bizIam.Biz, authBiz *bizAuth.Biz, auditBiz *bizAudit.Biz, systemBiz *bizSystem.Biz, jwtSvc securitycontract.JWTService, captchaStore ...base64Captcha.Store) *AuthService {
+	store := base64Captcha.DefaultMemStore
+	if len(captchaStore) > 0 && captchaStore[0] != nil {
+		store = captchaStore[0]
+	}
+	return &AuthService{
+		iamBiz:       iamBiz,
+		authBiz:      authBiz,
+		auditBiz:     auditBiz,
+		systemBiz:    systemBiz,
+		jwtSvc:       jwtSvc,
+		captchaStore: store,
+		captchaMaker: base64Captcha.NewCaptcha(base64Captcha.DefaultDriverDigit, store),
+	}
 }
 
 // Login 登录
@@ -58,7 +64,7 @@ func (s *AuthService) Login(ctx context.Context, username, password, captchaID, 
 		if captchaID == "" || captchaCode == "" {
 			return nil, errors.BadRequest("请输入验证码")
 		}
-		if !captchaStore.Verify(captchaID, captchaCode, true) {
+		if !s.captchaStore.Verify(captchaID, captchaCode, true) {
 			return nil, errors.BadRequest("验证码错误或已过期")
 		}
 	}
@@ -133,7 +139,7 @@ func (s *AuthService) Logout(ctx context.Context, tokenString string) error {
 // GenerateCaptcha 生成验证码
 // 使用 base64Captcha 库生成数字验证码，返回 ID 和 base64 图片
 func (s *AuthService) GenerateCaptcha(ctx context.Context) (*bizAuth.Captcha, error) {
-	id, b64s, _, err := captchaMaker.Generate()
+	id, b64s, _, err := s.captchaMaker.Generate()
 	if err != nil {
 		return nil, errors.InternalError("生成验证码失败")
 	}
@@ -146,7 +152,7 @@ func (s *AuthService) GenerateCaptcha(ctx context.Context) (*bizAuth.Captcha, er
 // VerifyCaptcha 校验验证码
 // captchaID: 验证码 ID；captchaCode: 用户输入的验证码；clear: 校验后是否清除
 func (s *AuthService) VerifyCaptcha(captchaID, captchaCode string, clear bool) bool {
-	return captchaStore.Verify(captchaID, captchaCode, clear)
+	return s.captchaStore.Verify(captchaID, captchaCode, clear)
 }
 
 // GetCurrentUser 获取当前登录用户详细信息
