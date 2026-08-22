@@ -30,15 +30,15 @@ func abortWithError(ctx gorp.Context, err error) {
 
 func statusFromErrorCode(code int) int {
 	switch code {
-	case httpx.CodeBadRequest:
+	case httpx.CodeBadRequest, 1001:
 		return http.StatusBadRequest
-	case httpx.CodeUnauthorized:
+	case httpx.CodeUnauthorized, 1002:
 		return http.StatusUnauthorized
-	case httpx.CodeForbidden:
+	case httpx.CodeForbidden, 1003:
 		return http.StatusForbidden
-	case httpx.CodeNotFound:
+	case httpx.CodeNotFound, 1004:
 		return http.StatusNotFound
-	case httpx.CodeInternalError:
+	case httpx.CodeInternalError, 1005:
 		return http.StatusInternalServerError
 	default:
 		return http.StatusInternalServerError

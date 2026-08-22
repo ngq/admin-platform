@@ -29,7 +29,7 @@ type Registry struct {
 func NewRegistry() *Registry { return &Registry{} }
 
 func (r *Registry) Wrap(router gorp.Router) gorp.Router {
-	return &trackingRouter{router: router, registry: r}
+	return &trackingRouter{Router: router, registry: r}
 }
 
 func (r *Registry) Routes() []Route {
@@ -47,16 +47,16 @@ func (r *Registry) add(method, path string) {
 }
 
 type trackingRouter struct {
-	router   gorp.Router
+	gorp.Router
 	registry *Registry
 	prefix   string
 }
 
-func (r *trackingRouter) Use(middleware ...gorp.Middleware) { r.router.Use(middleware...) }
+func (r *trackingRouter) Use(middleware ...gorp.Middleware) { r.Router.Use(middleware...) }
 
 func (r *trackingRouter) Group(prefix string, middleware ...gorp.Middleware) gorp.Router {
 	return &trackingRouter{
-		router:   r.router.Group(prefix, middleware...),
+		Router:   r.Router.Group(prefix, middleware...),
 		registry: r.registry,
 		prefix:   joinPath(r.prefix, prefix),
 	}
@@ -64,12 +64,12 @@ func (r *trackingRouter) Group(prefix string, middleware ...gorp.Middleware) gor
 
 func (r *trackingRouter) Handle(method, path string, handler gorp.Handler, middleware ...gorp.Middleware) {
 	r.registry.add(method, joinPath(r.prefix, path))
-	r.router.Handle(method, path, handler, middleware...)
+	r.Router.Handle(method, path, handler, middleware...)
 }
 
 func (r *trackingRouter) HandleFunc(method, path string, handler gorp.Handler, middleware ...gorp.Middleware) {
 	r.registry.add(method, joinPath(r.prefix, path))
-	r.router.HandleFunc(method, path, handler, middleware...)
+	r.Router.HandleFunc(method, path, handler, middleware...)
 }
 
 func (r *trackingRouter) GET(path string, handler gorp.Handler, middleware ...gorp.Middleware) {
@@ -88,7 +88,23 @@ func (r *trackingRouter) DELETE(path string, handler gorp.Handler, middleware ..
 	r.Handle(http.MethodDelete, path, handler, middleware...)
 }
 
-func (r *trackingRouter) Mount(path string, handler http.Handler) { r.router.Mount(path, handler) }
+func (r *trackingRouter) PATCH(path string, handler gorp.Handler, middleware ...gorp.Middleware) {
+	r.Handle(http.MethodPatch, path, handler, middleware...)
+}
+
+func (r *trackingRouter) HEAD(path string, handler gorp.Handler, middleware ...gorp.Middleware) {
+	r.Handle(http.MethodHead, path, handler, middleware...)
+}
+
+func (r *trackingRouter) OPTIONS(path string, handler gorp.Handler, middleware ...gorp.Middleware) {
+	r.Handle(http.MethodOptions, path, handler, middleware...)
+}
+
+func (r *trackingRouter) ANY(path string, handler gorp.Handler, middleware ...gorp.Middleware) {
+	r.Handle("ANY", path, handler, middleware...)
+}
+
+func (r *trackingRouter) Mount(path string, handler http.Handler) { r.Router.Mount(path, handler) }
 
 func joinPath(prefix, path string) string {
 	if prefix == "" {

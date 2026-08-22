@@ -17,7 +17,17 @@ func (stubRouter) GET(string, gorp.Handler, ...gorp.Middleware)                {
 func (stubRouter) POST(string, gorp.Handler, ...gorp.Middleware)               {}
 func (stubRouter) PUT(string, gorp.Handler, ...gorp.Middleware)                {}
 func (stubRouter) DELETE(string, gorp.Handler, ...gorp.Middleware)             {}
+func (stubRouter) PATCH(string, gorp.Handler, ...gorp.Middleware)              {}
+func (stubRouter) HEAD(string, gorp.Handler, ...gorp.Middleware)               {}
+func (stubRouter) OPTIONS(string, gorp.Handler, ...gorp.Middleware)            {}
+func (stubRouter) ANY(string, gorp.Handler, ...gorp.Middleware)                {}
 func (stubRouter) Mount(string, http.Handler)                                  {}
+func (stubRouter) Static(string, string)                                       {}
+func (stubRouter) StaticFile(string, string)                                   {}
+func (stubRouter) StaticFS(string, http.FileSystem)                            {}
+func (stubRouter) NoRoute(gorp.Handler)                                        {}
+func (stubRouter) NoMethod(gorp.Handler)                                       {}
+func (stubRouter) Routes() []gorp.RouteInfo                                    { return nil }
 
 func TestRegistryTracksContractRoutes(t *testing.T) {
 	registry := NewRegistry()
