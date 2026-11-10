@@ -10,7 +10,7 @@ import (
 // APIPO maps sys_apis.
 type APIPO struct {
 	ID             int64          `gorm:"primaryKey;autoIncrement" db:"id"`
-	Group          string         `gorm:"type:varchar(64);not null;comment:API分组" db:"group_name"`
+	Group          string         `gorm:"column:group_name;type:varchar(64);not null;comment:API分组" db:"group_name"`
 	Path           string         `gorm:"type:varchar(256);not null;uniqueIndex:idx_api_path_method" db:"path"`
 	Method         string         `gorm:"type:varchar(16);not null;uniqueIndex:idx_api_path_method" db:"method"`
 	Description    string         `gorm:"type:varchar(256)" db:"description"`

@@ -6,6 +6,8 @@
 package errors
 
 import (
+	"fmt"
+
 	"github.com/ngq/gorp/framework/httpx"
 )
 
@@ -37,62 +39,89 @@ const (
 
 // New 创建业务错误。
 func New(code int, message string) *httpx.BizError {
-	return httpx.NewBizError(code, message)
+	canonicalCode := mapToCanonicalCode(code)
+	return httpx.NewBizError(canonicalCode, fmt.Sprintf("%d", code), message)
 }
 
 // BadRequest 创建参数错误。
 func BadRequest(message string) *httpx.BizError {
-	return New(CodeBadRequest, message)
+	return httpx.NewBizError(httpx.CodeInvalidArgument, fmt.Sprintf("%d", CodeBadRequest), message)
 }
 
 // Unauthorized 创建未认证错误。
 func Unauthorized(message string) *httpx.BizError {
-	return New(CodeUnauthorized, message)
+	return httpx.NewBizError(httpx.CodeUnauthenticated, fmt.Sprintf("%d", CodeUnauthorized), message)
 }
 
 // Forbidden 创建无权限错误。
 func Forbidden(message string) *httpx.BizError {
-	return New(CodeForbidden, message)
+	return httpx.NewBizError(httpx.CodePermissionDenied, fmt.Sprintf("%d", CodeForbidden), message)
 }
 
 // NotFound 创建资源不存在错误。
 func NotFound(message string) *httpx.BizError {
-	return New(CodeNotFound, message)
+	return httpx.NewBizError(httpx.CodeNotFound, fmt.Sprintf("%d", CodeNotFound), message)
 }
 
 // InternalError 创建内部错误。
 func InternalError(message string) *httpx.BizError {
-	return New(CodeInternalError, message)
+	return httpx.NewBizError(httpx.CodeInternal, fmt.Sprintf("%d", CodeInternalError), message)
 }
 
 // Conflict 创建冲突错误。
 func Conflict(message string) *httpx.BizError {
-	return New(CodeConflict, message)
+	return httpx.NewBizError(httpx.CodeAlreadyExists, fmt.Sprintf("%d", CodeConflict), message)
 }
 
 // ========== 用户域便捷构造器 ==========
 
 // UserNotFound 创建用户不存在错误。
 func UserNotFound() *httpx.BizError {
-	return New(CodeUserNotFound, "用户不存在")
+	return httpx.NewBizError(httpx.CodeNotFound, fmt.Sprintf("%d", CodeUserNotFound), "用户不存在")
 }
 
 // UserAlreadyExists 创建用户已存在错误。
 func UserAlreadyExists() *httpx.BizError {
-	return New(CodeUserAlreadyExists, "用户名已存在")
+	return httpx.NewBizError(httpx.CodeAlreadyExists, fmt.Sprintf("%d", CodeUserAlreadyExists), "用户名已存在")
 }
 
 // UserPasswordWrong 创建密码错误。
 func UserPasswordWrong(message string) *httpx.BizError {
-	return New(CodeUserPasswordWrong, message)
+	return httpx.NewBizError(httpx.CodeInvalidArgument, fmt.Sprintf("%d", CodeUserPasswordWrong), message)
 }
 
 // UserDisabled 创建用户已禁用错误。
 func UserDisabled() *httpx.BizError {
-	return New(CodeUserDisabled, "用户已被禁用")
+	return httpx.NewBizError(httpx.CodePermissionDenied, fmt.Sprintf("%d", CodeUserDisabled), "用户已被禁用")
 }
 
 // UserTokenInvalid 创建令牌无效错误。
 func UserTokenInvalid(message string) *httpx.BizError {
-	return New(CodeUserTokenInvalid, message)
+	return httpx.NewBizError(httpx.CodeUnauthenticated, fmt.Sprintf("%d", CodeUserTokenInvalid), message)
+}
+
+func mapToCanonicalCode(code int) httpx.Code {
+	switch code {
+	case CodeBadRequest, CodeValidationFailed:
+		return httpx.CodeInvalidArgument
+	case CodeUnauthorized, CodeUserTokenExpired, CodeUserTokenInvalid:
+		return httpx.CodeUnauthenticated
+	case CodeForbidden, CodeUserDisabled:
+		return httpx.CodePermissionDenied
+	case CodeNotFound, CodeUserNotFound:
+		return httpx.CodeNotFound
+	case CodeConflict, CodeUserAlreadyExists:
+		return httpx.CodeAlreadyExists
+	case CodeTooManyRequests:
+		return httpx.CodeResourceExhausted
+	case CodeServiceUnavailable:
+		return httpx.CodeUnavailable
+	case CodeInternalError:
+		return httpx.CodeInternal
+	default:
+		if code >= 10000 && code < 11000 {
+			return httpx.CodeInvalidArgument
+		}
+		return httpx.CodeInternal
+	}
 }

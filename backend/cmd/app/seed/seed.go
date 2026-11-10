@@ -10,6 +10,7 @@ import (
 	svciam "github.com/ngq/admin-platform/internal/service/iam"
 	gorp "github.com/ngq/gorp"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 func Run(_ *gorp.HTTPRuntime, d *datainfra.Data, enforcer *casbin.SyncedEnforcer) error {
@@ -73,7 +74,7 @@ func Run(_ *gorp.HTTPRuntime, d *datainfra.Data, enforcer *casbin.SyncedEnforcer
 		}
 		params := []po.SysParamPO{{Key: "captcha_enabled", Value: "false", Category: "security", Status: 1}, {Key: "password_min_length", Value: "6", Category: "security", Status: 1}}
 		for _, p := range params {
-			_ = tx.Where("`key` = ?", p.Key).FirstOrCreate(&p).Error
+			_ = tx.Where(clause.Eq{Column: clause.Column{Name: "key"}, Value: p.Key}).FirstOrCreate(&p).Error
 		}
 		if _, err := enforcer.AddPolicy("super-admin", "*", "*"); err != nil {
 			return fmt.Errorf("casbin: %w", err)

@@ -7,9 +7,30 @@ import { startProgress, stopProgress } from '@vben/utils';
 
 import { accessRoutes, coreRouteNames } from '#/router/routes';
 import { useAuthStore } from '#/store';
-import { getAccessCodesApi } from '#/api';
+import { getAccessCodesApi, probeSetupStatusSilentApi } from '#/api';
 
 import { generateAccess } from './access';
+
+const SETUP_PATH = '/setup';
+let isDatabaseInitialized: boolean | null = null;
+
+function markDatabaseInitialized(value: boolean) {
+  isDatabaseInitialized = value;
+}
+
+async function ensureDatabaseInitialized(
+  forceRefresh = false,
+): Promise<boolean | null> {
+  if (!forceRefresh && isDatabaseInitialized === true) {
+    return true;
+  }
+  const status = await probeSetupStatusSilentApi();
+  if (!status) {
+    return null;
+  }
+  isDatabaseInitialized = status.initialized;
+  return status.initialized;
+}
 
 interface HomeMenu {
   children?: HomeMenu[];
@@ -100,6 +121,24 @@ function setupAccessGuard(router: Router) {
     const userStore = useUserStore();
     const authStore = useAuthStore();
 
+    const dbInitialized = await ensureDatabaseInitialized(
+      to.path === SETUP_PATH || to.path === LOGIN_PATH,
+    );
+    if (dbInitialized === false) {
+      if (accessStore.accessToken || accessStore.refreshToken) {
+        accessStore.setAccessToken(null);
+        accessStore.setRefreshToken(null);
+      }
+      if (to.path !== SETUP_PATH) {
+        return { path: SETUP_PATH, replace: true };
+      }
+      return true;
+    }
+
+    if (dbInitialized === true && to.path === SETUP_PATH) {
+      return { path: LOGIN_PATH, replace: true };
+    }
+
     // 基本路由，这些路由不需要进入权限拦截
     if (coreRouteNames.includes(to.name as string)) {
       if (to.path === LOGIN_PATH && accessStore.accessToken) {
@@ -186,4 +225,4 @@ function createRouterGuard(router: Router) {
   setupAccessGuard(router);
 }
 
-export { createRouterGuard };
+export { createRouterGuard, markDatabaseInitialized };

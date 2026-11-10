@@ -17,6 +17,17 @@ import { $t } from '#/locales';
 const dashboardHomePath = '/dashboard/analytics';
 const legacyDashboardHomePath = '/analytics';
 
+function resolveSafeRedirect(redirect: unknown): string | undefined {
+  if (typeof redirect !== 'string' || !redirect) {
+    return undefined;
+  }
+  const decoded = decodeURIComponent(redirect);
+  if (decoded.startsWith('/') && !decoded.startsWith('//')) {
+    return decoded;
+  }
+  return undefined;
+}
+
 function normalizeHomePath(path?: string) {
   if (!path || path === legacyDashboardHomePath) {
     return dashboardHomePath;
@@ -65,10 +76,16 @@ export const useAuthStore = defineStore('auth', () => {
         if (accessStore.loginExpired) {
           accessStore.setLoginExpired(false);
         } else {
+          const redirectTarget = resolveSafeRedirect(
+            router.currentRoute.value.query?.redirect,
+          );
           onSuccess
             ? await onSuccess?.()
             : await router.push(
-                normalizeHomePath(userInfo.homePath || preferences.app.defaultHomePath),
+                redirectTarget ||
+                  normalizeHomePath(
+                    userInfo.homePath || preferences.app.defaultHomePath,
+                  ),
               );
         }
 

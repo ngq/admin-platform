@@ -9,7 +9,8 @@ import (
 )
 
 func abortWithError(ctx gorp.Context, err error) {
-	code := httpx.CodeInternalError
+	code := httpx.CodeInternal
+	reason := ""
 	message := "internal server error"
 	if err == nil {
 		code = httpx.CodeSuccess
@@ -18,27 +19,35 @@ func abortWithError(ctx gorp.Context, err error) {
 		var bizErr httpx.BusinessError
 		if stderrors.As(err, &bizErr) {
 			code = bizErr.Code()
+			reason = bizErr.Reason()
 			message = bizErr.Message()
 		}
 	}
 
 	ctx.AbortWithJSON(statusFromErrorCode(code), httpx.Response{
 		Code:    code,
+		Reason:  reason,
 		Message: message,
 	})
 }
 
-func statusFromErrorCode(code int) int {
+func statusFromErrorCode(code httpx.Code) int {
 	switch code {
-	case httpx.CodeBadRequest, 1001:
+	case httpx.CodeInvalidArgument, httpx.CodeFailedPrecondition, httpx.CodeOutOfRange:
 		return http.StatusBadRequest
-	case httpx.CodeUnauthorized, 1002:
+	case httpx.CodeUnauthenticated:
 		return http.StatusUnauthorized
-	case httpx.CodeForbidden, 1003:
+	case httpx.CodePermissionDenied:
 		return http.StatusForbidden
-	case httpx.CodeNotFound, 1004:
+	case httpx.CodeNotFound:
 		return http.StatusNotFound
-	case httpx.CodeInternalError, 1005:
+	case httpx.CodeAlreadyExists, httpx.CodeAborted:
+		return http.StatusConflict
+	case httpx.CodeResourceExhausted:
+		return http.StatusTooManyRequests
+	case httpx.CodeUnavailable:
+		return http.StatusServiceUnavailable
+	case httpx.CodeInternal:
 		return http.StatusInternalServerError
 	default:
 		return http.StatusInternalServerError

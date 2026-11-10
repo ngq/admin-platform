@@ -14,6 +14,7 @@ import (
 	datasystem "github.com/ngq/admin-platform/internal/data/system"
 	"github.com/ngq/admin-platform/internal/datainfra"
 	svciam "github.com/ngq/admin-platform/internal/service/iam"
+	svcsetup "github.com/ngq/admin-platform/internal/service/setup"
 	gorp "github.com/ngq/gorp"
 )
 
@@ -80,7 +81,19 @@ func setup(rt *gorp.HTTPRuntime) error {
 		return mode, true
 	}
 
-	apphttp.RegisterRoutes(routeRegistry.Wrap(rt.Router), authSvc, roleSvc, iamBiz, systemBiz, auditBiz, rt.JWT, d.Casbin, authBiz.AuthRepo, resolveMode)
+	activeDriver := ""
+	activeDSN := ""
+	if rt.Config != nil {
+		activeDriver = rt.Config.GetString("database.driver")
+		activeDSN = rt.Config.GetString("database.dsn")
+	}
+	setupSvc := svcsetup.NewService(svcsetup.Options{
+		Initialized:  true,
+		ActiveDriver: activeDriver,
+		ActiveDSN:    activeDSN,
+	})
+
+	apphttp.RegisterRoutes(routeRegistry.Wrap(rt.Router), authSvc, roleSvc, iamBiz, systemBiz, auditBiz, rt.JWT, d.Casbin, authBiz.AuthRepo, resolveMode, setupSvc)
 	if err := routesync.Sync(routeRegistry.Routes(), d); err != nil {
 		return fmt.Errorf("route sync: %w", err)
 	}

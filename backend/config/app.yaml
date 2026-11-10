@@ -8,11 +8,13 @@ app:
 server:
   http:
     addr: :8080
-    mode: contract
+    mode: debug
 
 database:
   driver: mysql
   dsn: env(DATABASE_DSN)
+  # migrate_mode: hybrid (开发期先执行 goose 再补充 AutoMigrate；goose: 仅用 goose；auto: 仅 AutoMigrate；production 环境强制仅使用 goose)
+  migrate_mode: hybrid
 
 log:
   level: debug
@@ -20,7 +22,7 @@ log:
 
 tracing:
   enabled: false
-  backend: otel
+  backend: noop
   service_name: admin-platform
   otel:
     endpoint: localhost:4317
@@ -38,7 +40,7 @@ governance:
 
 service_auth:
   enabled: false
-  backend: token
+  backend: noop
   token:
     secret: env(SERVICE_AUTH_SECRET)
     issuer: admin-platform
@@ -48,7 +50,7 @@ service_auth:
 
 circuit_breaker:
   enabled: false
-  backend: sentinel
+  backend: noop
 
 load_shedding:
   enabled: false
@@ -78,7 +80,7 @@ redis:
 
 message_queue:
   enabled: false
-  backend: redis
+  backend: noop
   redis:
     addr: 127.0.0.1:6379
     password: ""
@@ -87,7 +89,7 @@ message_queue:
 
 distributed_lock:
   enabled: false
-  backend: redis
+  backend: noop
   redis:
     addr: 127.0.0.1:6379
     password: ""

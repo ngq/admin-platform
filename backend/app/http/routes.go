@@ -5,17 +5,19 @@ import (
 	hdlraudit "github.com/ngq/admin-platform/app/http/handler/admin/audit"
 	hdlriam "github.com/ngq/admin-platform/app/http/handler/admin/iam"
 	hdlrsystem "github.com/ngq/admin-platform/app/http/handler/admin/system"
+	hdlrsetup "github.com/ngq/admin-platform/app/http/handler/setup"
 	"github.com/ngq/admin-platform/app/http/middleware"
 	bizaudit "github.com/ngq/admin-platform/internal/biz/audit"
 	"github.com/ngq/admin-platform/internal/biz/auth"
 	biziam "github.com/ngq/admin-platform/internal/biz/iam"
 	bizsystem "github.com/ngq/admin-platform/internal/biz/system"
 	svciam "github.com/ngq/admin-platform/internal/service/iam"
+	svcsetup "github.com/ngq/admin-platform/internal/service/setup"
 	gorp "github.com/ngq/gorp"
 	securitycontract "github.com/ngq/gorp/framework/contract/security"
 )
 
-func RegisterRoutes(router gorp.Router, authSvc *svciam.AuthService, roleSvc *svciam.RoleService, iamBiz *biziam.Biz, systemBiz *bizsystem.Biz, auditBiz *bizaudit.Biz, jwtSvc securitycontract.JWTService, enforcer *casbin.SyncedEnforcer, authRepo auth.AuthRepository, resolveMode middleware.APIPermissionModeResolver) {
+func RegisterRoutes(router gorp.Router, authSvc *svciam.AuthService, roleSvc *svciam.RoleService, iamBiz *biziam.Biz, systemBiz *bizsystem.Biz, auditBiz *bizaudit.Biz, jwtSvc securitycontract.JWTService, enforcer *casbin.SyncedEnforcer, authRepo auth.AuthRepository, resolveMode middleware.APIPermissionModeResolver, setupSvc ...*svcsetup.Service) {
 	authH := hdlriam.NewAuthHandler(authSvc)
 	userH := hdlriam.NewUserHandler(iamBiz)
 	deptH := hdlriam.NewDepartmentHandler(iamBiz)
@@ -32,6 +34,11 @@ func RegisterRoutes(router gorp.Router, authSvc *svciam.AuthService, roleSvc *sv
 	casbinMW := middleware.CasbinRBACWithPermissionMode(enforcer, resolveMode)
 	opMW := middleware.OperationLog(auditBiz, nil)
 	v1 := router.Group("/api/v1")
+	var activeSetupSvc *svcsetup.Service
+	if len(setupSvc) > 0 {
+		activeSetupSvc = setupSvc[0]
+	}
+	hdlrsetup.RegisterRoutes(v1, activeSetupSvc)
 	public := v1.Group("/auth")
 	public.POST("/login", authH.Login)
 	public.POST("/refresh", authH.RefreshToken)

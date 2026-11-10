@@ -6,4 +6,5 @@ export * from './menu';
 export * from './operation-log';
 export * from './param';
 export * from './role';
+export * from './setup';
 export * from './user';

@@ -154,6 +154,7 @@ var groupRules = []struct {
 	{"/api/v1/login-logs", "login-log"},
 	{"/api/v1/error-logs", "error-log"},
 	{"/api/v1/system/", "system"},
+	{"/api/v1/setup/", "setup"},
 }
 
 type apiDescriptionKey struct {
@@ -169,13 +170,19 @@ var apiDescriptions = map[apiDescriptionKey]string{
 	{"POST", "/api/v1/departments/delete/:id"}:  "Delete department",
 	{"GET", "/api/v1/roles/permission-config"}:  "Role permission configuration",
 	{"POST", "/api/v1/roles/permission-config"}: "Save role permission configuration",
+	{"GET", "/api/v1/setup/status"}:             "Setup status",
+	{"POST", "/api/v1/setup/test-connection"}:   "Test database connection",
+	{"POST", "/api/v1/setup/database"}:          "Initialize database",
 }
 
 var ignoredPaths = map[string]bool{
-	"/api/v1/auth/login":    true,
-	"/api/v1/auth/refresh":  true,
-	"/api/v1/auth/captcha":  true,
-	"/api/v1/system/health": true,
+	"/api/v1/auth/login":            true,
+	"/api/v1/auth/refresh":          true,
+	"/api/v1/auth/captcha":          true,
+	"/api/v1/system/health":         true,
+	"/api/v1/setup/status":          true,
+	"/api/v1/setup/test-connection": true,
+	"/api/v1/setup/database":        true,
 }
 
 // Sync imports the currently registered Contract HTTP routes into sys_apis.

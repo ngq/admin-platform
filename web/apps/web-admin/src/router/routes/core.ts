@@ -39,6 +39,18 @@ const coreRoutes: RouteRecordRaw[] = [
     children: [],
   },
   {
+    component: () => import('#/views/_core/setup/index.vue'),
+    meta: {
+      hideInBreadcrumb: true,
+      hideInMenu: true,
+      hideInTab: true,
+      ignoreAccess: true,
+      title: $t('page.setup.title'),
+    },
+    name: 'DatabaseSetup',
+    path: '/setup',
+  },
+  {
     component: AuthPageLayout,
     meta: {
       hideInTab: true,

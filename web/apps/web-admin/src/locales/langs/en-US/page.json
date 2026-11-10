@@ -11,5 +11,8 @@
     "title": "Dashboard",
     "analytics": "Analytics",
     "workspace": "Workspace"
+  },
+  "setup": {
+    "title": "Database Setup"
   }
 }

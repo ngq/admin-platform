@@ -4,10 +4,11 @@ package system
 
 import (
 	"context"
-	"github.com/ngq/admin-platform/internal/datainfra"
 
 	"github.com/ngq/admin-platform/internal/biz/system"
 	"github.com/ngq/admin-platform/internal/data/po"
+	"github.com/ngq/admin-platform/internal/datainfra"
+	"gorm.io/gorm/clause"
 )
 
 // paramRepo 系统参数仓储实现
@@ -61,7 +62,7 @@ func (r *paramRepo) GetByID(ctx context.Context, id int64) (*system.SysParam, er
 // GetByKey 根据参数Key获取系统参数
 func (r *paramRepo) GetByKey(ctx context.Context, key string) (*system.SysParam, error) {
 	var paramPO po.SysParamPO
-	if err := r.data.DB(ctx).Where("`key` = ?", key).First(&paramPO).Error; err != nil {
+	if err := r.data.DB(ctx).Where(clause.Eq{Column: clause.Column{Name: "key"}, Value: key}).First(&paramPO).Error; err != nil {
 		return nil, err
 	}
 	return paramPO.ToEntity(), nil
@@ -80,7 +81,7 @@ func (r *paramRepo) List(ctx context.Context, page, pageSize int, category, key 
 	}
 	// 按 Key 模糊搜索
 	if key != "" {
-		db = db.Where("`key` LIKE ?", "%"+key+"%")
+		db = db.Where(clause.Like{Column: clause.Column{Name: "key"}, Value: "%" + key + "%"})
 	}
 
 	// 分页查询
